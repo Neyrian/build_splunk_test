@@ -30,7 +30,7 @@ For your first run, you'd run the following commands
 ./splunk.sh getLogFiles
 ./splunk.sh import
 ```
-And your splunk instance should be available on http://localhost:8000/
+And your splunk instance should be available on http://localhost:8000/ with creds: admin:Admin#123
 
 ## Using WSL2
 
