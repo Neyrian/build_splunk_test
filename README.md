@@ -2,6 +2,12 @@
 
 This script aim to easly build a local splunk, and imports logs for tests purposes.
 
+This script is still underconstruction. It'll cause no harm but might not completly work
+- [ ] Add logs in repo
+- [ ] Add apps in repo
+- [ ] Add dockers check in function
+- [ ] Add correct indexing for linux logs
+
 ## Set up
 
 Get the script from this repo 
