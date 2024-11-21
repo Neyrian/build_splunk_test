@@ -14,6 +14,8 @@ ensure that you have docker installed, otherwise run
 sudo apt install docker.io
 ```
 
+Change the var $workind_dir in the script with your working dir.
+
 Then run the cheks command and getLogFiles
 ```bash
 ./splunk.sh checks
