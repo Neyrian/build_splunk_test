@@ -3,29 +3,31 @@
 This script aim to easly build a local splunk, and imports logs for tests purposes.
 
 This script is still underconstruction. It'll cause no harm but might not completly work
-- [ ] Add logs in repo
-- [ ] Add apps in repo
-- [ ] Add dockers check in function
-- [ ] Add correct indexing for linux logs
 
 ## Set up
 
-Get the script from this repo 
+1. Get the script from this repo 
 ```bash
 git clone https://github.com/Neyrian/build_splunk_test.git
 ```
 
-ensure that you have docker installed, otherwise run
+2. Ensure that you have docker installed, otherwise run
 ```bash
 sudo apt install docker.io
 ```
 
-Change the var $workind_dir in the script with your working dir.
+3. Change the var $workind_dir in the script with your working dir.
 
-Then run the cheks command and getLogFiles
+4. Download in your $workind_dir the following splunk apps:
+- Windows TA https://splunkbase.splunk.com/app/742
+- Apache TA https://splunkbase.splunk.com/app/3186
+- Unix and Linux TA https://splunkbase.splunk.com/app/833
+
+5. (Optional) On a windows machine, export Security, Application and System logs in xml and put them in the folder $workind_dir/Windows under xmlwineventlogSecurity.xml, xmlwineventlogApplication.xml, xmlwineventlogSystem.xml.
+
+5. Then run the cheks command
 ```bash
 ./splunk.sh checks
-./splunk.sh getLogFiles
 ```
 
 ## Usages
@@ -33,12 +35,13 @@ Then run the cheks command and getLogFiles
 You can display the "help" menu by running the script wuthout any args.
 For your first run, you'd run the following commands
 ```bash
-./splunk.sh create
 ./splunk.sh checks
-./splunk.sh getLogFiles
-./splunk.sh import
+./splunk.sh create
+./splunk.sh createIndexes
+./splunk.sh importLogs
+./splunk.sh apps
 ```
-And your splunk instance should be available on http://localhost:8000/ with creds: admin:Admin#123
+And your splunk instance should be available on http://localhost:8000/ with creds: admin:Admin#123 (by default)
 
 ## Using WSL2
 
