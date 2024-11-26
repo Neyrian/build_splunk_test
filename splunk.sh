@@ -5,10 +5,12 @@
 ##################
 # You can edit these variable
 container_name="splunk"   # Docker container ID or name
-destination_path="/opt/splunk/var/log/splunk/" # Destination path in the container
 debug=true
+splunk_pwd="Admin#123"
 working_dir=$HOME
 ##################
+
+destination_path="/opt/splunk/var/log/splunk/" # Destination path in the container
 
 ## Apache Conf File
 ## Source: https://github.com/logpai/loghub
@@ -189,7 +191,7 @@ elif [ "$1" == "create" ]; then
         log_message "WARN" "A container named $container_name already exists."
     else
         log_message "INFO" "Creating containter $container_name"
-        sudo docker run -d -p 8000:8000 -e "SPLUNK_START_ARGS=--accept-license" -e "SPLUNK_PASSWORD=Admin#123" --name $container_name splunk/splunk:latest
+        sudo docker run -d -p 8000:8000 -e "SPLUNK_START_ARGS=--accept-license" -e "SPLUNK_PASSWORD=$splunk_pwd" --name $container_name splunk/splunk:latest
     fi
 elif [ "$1" == "status" ]; then
     sudo docker container logs $container_name
