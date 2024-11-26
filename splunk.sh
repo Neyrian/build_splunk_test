@@ -2,10 +2,13 @@
 
 # Script name: splunk.sh
 
-# Variables
+##################
+# You can edit these variable
 container_name="splunk"   # Docker container ID or name
 destination_path="/opt/splunk/var/log/splunk/" # Destination path in the container
+debug=true
 working_dir=$HOME
+##################
 
 ## Apache Conf File
 ## Source: https://github.com/logpai/loghub
@@ -60,24 +63,25 @@ applicationwindows_source="XmlWinEventLog:Application"            # Source to se
 ## Download them on the official splunk website https://splunkbase.splunk.com/
 apache_ta_path="$working_dir/splunk-add-on-for-apache-web-server_210.tgz"
 windows_ta_path="$working_dir/splunk-add-on-for-microsoft-windows_900.tgz"
-linux_ta_path="$working_dir/splunk-add-on-for-linux_210.tgz"
+linux_ta_path="$working_dir/splunk-add-on-for-unix-and-linux_920"
 
 
 # Define the log function
 log_message() {
-    local log_level=$1
-    shift
-    local log_message="$@"
-    local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
+    if [ "$debug" = true ]; then
+        local log_level=$1
+        shift
+        local log_message="$@"
+        local timestamp=$(date +"%Y-%m-%d %H:%M:%S")
 
-    echo "$timestamp [$log_level] $log_message"
+        echo "$timestamp [$log_level] $log_message"
+    fi
 }
 
 # Check if no arguments were passed
 if [ $# -eq 0 ]; then
     log_message "WARN" "Usage ./splunk.sh <option>"
     log_message "INFO" "./splunk.sh checks -> chekcs if everything is good"
-    log_message "INFO" "./splunk.sh getLogFiles -> download the log Files"
     log_message "INFO" "./splunk.sh start -> start the containter splunk"
     log_message "INFO" "./splunk.sh delete -> delete the containter"
     log_message "INFO" "./splunk.sh stop -> stop the container"
@@ -140,96 +144,65 @@ elif [ "$1" == "checks" ]; then
         log_message "WARN" "Windows System XmlWinEventLog file doesn't exist"
     fi
     log_message "INFO" "Checks finished..."
-
-elif [ "$1" == "getLogFiles" ]; then
-    log_message "INFO" "Download log files if missing..."
-    cd $working_dir
-    if ! [ -e $windows_logfile_path ]; then
-        log_message "Warm" "DL windows logs"
-        if ! [ -e $(dirname "$windows_logfile_path") ]; then mkdir $(dirname "$windows_logfile_path"); fi
-        wget "https://raw.githubusercontent.com/d4rk-d4nph3/Windows-Event-Samples/refs/heads/main/WinEvents.log" -O "Windows.log" 
-        mv Windows.log $working_dir/Windows
-    fi
-    if ! [ -e $ssh_logfile_path ]; then
-        if ! [ -e $(dirname "$ssh_logfile_path") ]; then mkdir $(dirname "$ssh_logfile_path"); fi
-        wget "https://zenodo.org/records/8196385/files/SSH.tar.gz?download=1" -O "SSH.tar.gz"
-        tar -xzf $working_dir/SSH.tar.gz -C $working_dir/SSH/
-        rm -f $working_dir/SSH.tar.gz
-    fi
-    if ! [ -e $apache_logfile_path ]; then
-        if ! [ -e $(dirname "$apache_logfile_path") ]; then mkdir $(dirname "$apache_logfile_path"); fi
-        wget "https://zenodo.org/records/8196385/files/Apache.tar.gz?download=1" -O "Apache.tar.gz"
-        tar -xzf $working_dir/Apache.tar.gz -C $working_dir/Apache/
-        rm -f $working_dir/Apache.tar.gz
-    fi
-    if ! [ -e $linux_logfile_path ]; then
-        if ! [ -e $(dirname "$linux_logfile_path") ]; then mkdir $(dirname "$linux_logfile_path"); fi
-        wget "https://zenodo.org/records/8196385/files/Linux.tar.gz?download=1" -O "Linux.tar.gz"
-        tar -xzf $working_dir/Linux.tar.gz -C $working_dir/Linux/
-        rm -f $working_dir/Linux.tar.gz
-    fi
-
 elif [ "$1" == "start" ]; then
     log_message "INFO" "No args, checking if spunk containter exists..."
-    if [ "$(sudo docker ps -aq -f status=exited -f name=splunk)" ]; then
+    if [ "$(sudo docker ps -aq -f status=exited -f name=$container_name)" ]; then
         log_message "INFO" "Starting containter..."
-        sudo docker container start splunk
+        sudo docker container start $container_name
     else
-        log_message "WARN" "No Splunk container or already running..."
+        log_message "WARN" "No existed container named $container_name"
     fi
 elif [ "$1" == "delete" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
         log_message "ERROR" "The containter is running, can't delete..."
-    elif [ "$(sudo docker ps -aq -f status=exited -f name=splunk)" ]; then
-        log_message "INFO" "Deleting the splunk containter."
-        sudo docker container rm splunk
+    elif [ "$(sudo docker ps -aq -f status=exited -f name=$container_name)" ]; then
+        log_message "INFO" "Deleting the containter named $container_name"
+        sudo docker container rm $container_name
     else
-        log_message "WARN" "No Splunk container..."
+        log_message "WARN" "No container named $container_name"
         log_message "WARN" "run splunk.sh create"
     fi
 elif [ "$1" == "stop" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
-        log_message "INFO" "Stoping the splunk containter."
-        sudo docker container stop splunk
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
+        log_message "INFO" "Stoping the containter."
+        sudo docker container stop $container_name
     else
-        log_message "ERROR" "Container not running..."
+        log_message "ERROR" "The container named $container_name not running..."
     fi
 elif [ "$1" == "pause" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
-        log_message "INFO" "Pausing the splunk containter."
-        sudo docker container pause splunk
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
+        log_message "INFO" "Pausing the containter."
+        sudo docker container pause $container_name
     else
-        log_message "ERROR" "Container not running..."
+        log_message "ERROR" "The container named $container_name not running..."
     fi
 elif [ "$1" == "unpause" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
-        log_message "INFO" "Pausing the splunk containter."
-        sudo docker container unpause splunk
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
+        log_message "INFO" "Pausing the containter."
+        sudo docker container unpause $container_name
     else
-        log_message "ERROR" "Container not running..."
+        log_message "ERROR" "The container named $container_name not running..."
     fi
 elif [ "$1" == "create" ]; then
     log_message "INFO" "checking if no spunk containter exists..."
-    if [ "$(sudo docker ps -aq -f status=exited -f name=splunk)" ]; then
-        log_message "WARN" "Splunk container exists."
-        log_message "INFO" "Deleting the splunk containter."
-        sudo docker container rm splunk
+    if [ "$(sudo docker ps -aq -f status=exited -f name=$container_name)" ]; then
+        log_message "WARN" "A container named $container_name already exists."
+    else
+        log_message "INFO" "Creating containter $container_name"
+        sudo docker run -d -p 8000:8000 -e "SPLUNK_START_ARGS=--accept-license" -e "SPLUNK_PASSWORD=Admin#123" --name $container_name splunk/splunk:latest
     fi
-    log_message "INFO" "Creating spunk containter..."
-    sudo docker run -d -p 8000:8000 -e "SPLUNK_START_ARGS=--accept-license" -e "SPLUNK_PASSWORD=Admin#123" --name splunk splunk/splunk:latest
-    log_message "INFO" "Use import and app to upload logs file and install required app to your instance"
 elif [ "$1" == "status" ]; then
-    sudo docker container logs splunk
+    sudo docker container logs $container_name
     sudo docker container ls -a
 elif [ "$1" == "restart" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
-        log_message "INFO" "Restarting splunk."
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
+        log_message "INFO" "Restarting the container $container_name."
         sudo docker exec -it "$container_name" /bin/bash -c "sudo /opt/splunk/bin/splunk restart"
     else
         log_message "ERROR" "Container not running..."
     fi
 elif [ "$1" == "shell" ]; then
-    if [ "$(sudo docker ps -q -f  name=splunk)" ]; then
+    if [ "$(sudo docker ps -q -f  name=$container_name)" ]; then
         log_message "INFO" "Open shell as splunk user"
         sudo docker exec --user splunk -it "$container_name" /bin/bash
     else
@@ -246,42 +219,12 @@ elif [ "$1" == "config" ]; then
 elif [ "$1" == "createIndexes" ]; then
     log_message "INFO" "Add index apache"
     sudo docker exec -it "$container_name" /bin/bash -c "sudo /opt/splunk/bin/splunk add index $apache_index_name"
-#     log_message "INFO" "Add apache config"
-#     sudo docker exec --user splunk -it splunk /bin/bash -c "
-#         echo '[apache]
-# LINE_BREAKER = ([\r\n]+)
-# NO_BINARY_CHECK = true
-# SHOULD_LINEMERGE = false 
-# TIME_FORMAT = %a %b %d %H:%M:%S %Y
-# category = Custom
-# disabled = false
-# pulldown_type = true' >> /opt/splunk/etc/apps/search/local/props.conf"
 
     log_message "INFO" "Add index linux"
     sudo docker exec -it "$container_name" /bin/bash -c "sudo /opt/splunk/bin/splunk add index $ssh_index_name"
-#     log_message "INFO" "Add linux config"
-#     sudo docker exec --user splunk -it splunk /bin/bash -c "
-#         echo '[linux]
-# LINE_BREAKER = ([\r\n]+)
-# NO_BINARY_CHECK = true
-# SHOULD_LINEMERGE = false 
-# TIME_FORMAT = %b %d %H:%M:%S
-# category = Custom
-# disabled = false
-# pulldown_type = true' >> /opt/splunk/etc/apps/search/local/props.conf"
 
     log_message "INFO" "Add index windows"
     sudo docker exec -it "$container_name" /bin/bash -c "sudo /opt/splunk/bin/splunk add index $windows_index_name"
-#     log_message "INFO" "Add windows config"
-#     sudo docker exec --user splunk -it splunk /bin/bash -c "
-#         echo '[windows]
-# LINE_BREAKER = ([\r\n]+)
-# NO_BINARY_CHECK = true
-# SHOULD_LINEMERGE = true 
-# TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%6N%:z
-# category = Custom
-# disabled = false
-# pulldown_type = true' >> /opt/splunk/etc/apps/search/local/props.conf"
 elif [ "$1" == "importLogs" ]; then
     sudo docker exec --user splunk -it "$container_name" /bin/bash -c "mkdir /opt/splunk/etc/apps/search/local"
     if [ -e $apache_logfile_path ]; then
